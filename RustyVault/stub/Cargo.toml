@@ -1,0 +1,18 @@
+[package]
+name = "stub"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+obfstr = "0.4" # Pour l'obfuscation des strings
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# On active quasiment tout pour manipuler les processus
+winapi = { version = "0.3", features = [
+    "winuser", "sysinfoapi", "errhandlingapi", "memoryapi", 
+    "processthreadsapi", "synchapi", "winbase", "winnt", 
+    "handleapi", "libloaderapi", "basetsd", "debugapi"
+]}

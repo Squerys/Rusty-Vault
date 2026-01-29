@@ -1,6 +1,13 @@
-[package]
-name = "RustyVault"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "builder",
+    "stub"
+]
 
-[dependencies]
+# Optimisations agressives pour réduire la taille du stub final
+[profile.release]
+opt-level = "z"     # Optimiser pour la taille (Size)
+lto = true          # Link Time Optimization (fusionne mieux le code)
+codegen-units = 1   # Compile plus lentement mais binaire plus petit
+panic = "abort"     # Retire le code de gestion d'erreur (plus léger)
+strip = true        # Retire les symboles de debug (indispensable pour un malware/packer)
