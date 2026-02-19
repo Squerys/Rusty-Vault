@@ -1,0 +1,6 @@
+Le stub c'est l'exe qui sert de "marrionnette"
+
+On va mettre le vrai code chiffré dedans (que xor pour le moment)
+Et quand le user va le lancer
+Il va chercher dans sa mémoire le marqueur du début de payload (string)
+Une fois qu'il l'a trouvé, il écris dnas la ram l'entièrté du programme original dechiffré et le lance
