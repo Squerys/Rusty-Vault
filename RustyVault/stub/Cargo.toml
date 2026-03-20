@@ -13,6 +13,13 @@ winapi = { version = "0.3", features = [
     "processthreadsapi", "synchapi", "winbase", "winnt", 
     "handleapi", "libloaderapi", "basetsd", "debugapi", "tlhelp32"
 ]}
+windows-sys = { version = "0.52", features = [
+    "Win32_System_Performance",
+    "Win32_System_SystemInformation",
+] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2"
+
+
+
