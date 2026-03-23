@@ -10,12 +10,19 @@ use std::process::exit;
 use std::ptr;
 use obfstr::obfstr;
 
-use crate::get_time_cycles::*;
-use crate::is_being_debugged::*;
-use crate::linux_mem_exec::*;
-use crate::is_being_debugged::*;
-use crate::resolve_rva::*;
-use crate::run_pe::*;
+mod get_time_cycles;
+mod is_being_debugged;
+mod linux_mem_exec;
+mod inject_remote_dll;
+mod resolve_rva;
+mod run_pe;
+
+use get_time_cycles::*;
+use is_being_debugged::*;
+use linux_mem_exec::*;
+use is_being_debugged::*;
+use resolve_rva::*;
+use run_pe::*;
 
 const MAGIC_DELIMITER: &[u8] = &[0xDE, 0xAD, 0xBE, 0xEF, 0xC0, 0xFF, 0xEE, 0x11];
 const PARTIAL_KEY: u8 = 0x55;

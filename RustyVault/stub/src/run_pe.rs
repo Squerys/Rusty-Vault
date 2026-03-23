@@ -9,6 +9,9 @@ use std::process::exit;
 use std::ptr;
 use obfstr::obfstr;
 
+use crate::resolve_rva;
+use crate::inject_remote_dll::inject_remote_dll;
+
 // =============================================================
 // WINDOWS: RUNPE / PROCESS HOLLOWING
 // =============================================================
