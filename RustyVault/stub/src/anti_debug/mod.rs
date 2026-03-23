@@ -47,5 +47,10 @@ pub fn run_all_checks() -> bool
         return true;
     }
 
+    if debugger::check()
+    {
+        return true;
+    }
+
     false
 }
