@@ -1,3 +1,6 @@
+use std::ffi::CString;
+use std::ptr;
+
 pub struct RogueCipher {
     round_keys: [[u64; 2]; 12],
 }
@@ -89,14 +92,39 @@ pub fn get_stolen_key() -> Vec<u8> {
     }
 
     #[cfg(target_os = "linux")]
-    {
-        key = vec![0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F, 0x70, 0x81, 0x92, 0xA3, 0xB4, 0xC5, 0xD6, 0xE7, 0xF8, 0x09];
+    unsafe {
+        // Sous Linux, libc contient la plupart des appels système de base
+        // RTLD_LAZY (1) est souvent suffisant pour l'ouverture
+        let libc_name = CString::new("libc.so.6").unwrap();
+        let h_libc = libc::dlopen(libc_name.as_ptr(), libc::RTLD_LAZY);
+
+        // Liste des fonctions "intéressantes" pour générer l'entropie
+        let funcs = [
+            CString::new("mmap").unwrap(),
+            CString::new("mprotect").unwrap(),
+            CString::new("fork").unwrap(),
+            CString::new("execve").unwrap(),
+        ];
+
+        if !h_libc.is_null() {
+            for func_name in funcs.iter() {
+                let addr = libc::dlsym(h_libc, func_name.as_ptr());
+                if !addr.is_null() {
+                    // On lit les 4 premiers octets (l'entête de la fonction)
+                    for offset in 0..4 {
+                        let byte = ptr::read_volatile((addr as *const u8).offset(offset));
+                        key.push(byte);
+                    }
+                }
+            }
+            libc::dlclose(h_libc);
+        }
     }
 
     // On s'assure d'avoir au moins 16 octets
     if key.len() < 16 {
         key.extend(vec![0x00; 16 - key.len()]);
     }
-    
+
     key
 }
