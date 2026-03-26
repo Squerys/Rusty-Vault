@@ -7,10 +7,11 @@ pub struct RogueCipher {
 }
 
 impl RogueCipher {
+    // Construction sous-clé (Key Scheduling && Réseau de Feistel)
     pub fn new(key: &[u8]) -> Self {
         if key.len() < 16 { panic!("Clé trop courte !"); }
         let mut rks = [[0u64; 2]; 12];
-        
+
         let mut k_l = u64::from_le_bytes(key[0..8].try_into().unwrap());
         let mut k_r = u64::from_le_bytes(key[8..16].try_into().unwrap());
 
@@ -23,6 +24,7 @@ impl RogueCipher {
         RogueCipher { round_keys: rks }
     }
 
+    // Chiffrement (ARX)
     fn f(r: u64, k1: u64, k2: u64) -> u64 {
         let x = r ^ k1;
         let rot_val = (k2 & 0x3F) as u32; 
@@ -30,7 +32,7 @@ impl RogueCipher {
         y ^ k1
     }
 
-    // CHIFFREMENT (Feistel à l'endroit)
+    // Chiffrement (Réseau de Feistel)
     fn encrypt_block(&self, block: &mut [u8]) {
         let mut l = u64::from_le_bytes(block[0..8].try_into().unwrap());
         let mut r = u64::from_le_bytes(block[8..16].try_into().unwrap());
@@ -47,11 +49,12 @@ impl RogueCipher {
         block[8..16].copy_from_slice(&r.to_le_bytes());
     }
 
+    // Découpage des blocs (Padding PKCS#7)
     pub fn encrypt_payload(&self, data: &mut Vec<u8>) {
-        // Padding PKCS#7 like (remplissage avec des zéros) pour avoir un multiple de 16
-        let padding_needed = (16 - (data.len() % 16)) % 16;
+        let padding_needed = 16 - (data.len() % 16);
+
         for _ in 0..padding_needed {
-            data.push(0);
+            data.push(padding_needed as u8);
         }
 
         for chunk in data.chunks_exact_mut(16) {
@@ -60,9 +63,8 @@ impl RogueCipher {
     }
 }
 
-// =============================================================
-// EXTRACTION DES STOLEN BYTES (Génération de la clé)
-// =============================================================
+
+// Génération base (Stolen Bytes && API/Binary fingerprinting)
 pub fn get_stolen_key() -> Vec<u8> {
     let mut key = Vec::new();
 
@@ -96,12 +98,9 @@ pub fn get_stolen_key() -> Vec<u8> {
 
     #[cfg(target_os = "linux")]
     unsafe {
-        // Sous Linux, libc contient la plupart des appels système de base
-        // RTLD_LAZY (1) est souvent suffisant pour l'ouverture
-        let libc_name = CString::new("libc.so.6").unwrap();
+       let libc_name = CString::new("libc.so.6").unwrap();
         let h_libc = libc::dlopen(libc_name.as_ptr(), libc::RTLD_LAZY);
 
-        // Liste des fonctions "intéressantes" pour générer l'entropie
         let funcs = [
             CString::new("mmap").unwrap(),
             CString::new("mprotect").unwrap(),
@@ -114,7 +113,6 @@ pub fn get_stolen_key() -> Vec<u8> {
                 let addr = libc::dlsym(h_libc, func_name.as_ptr());
 
                 if !addr.is_null() {
-                    // On lit les 4 premiers octets (l'entête de la fonction)
                     for offset in 0..4 {
                         let byte = ptr::read_volatile((addr as *const u8).offset(offset));
                         key.push(byte);

@@ -6,6 +6,7 @@ pub struct RogueCipher {
 }
 
 impl RogueCipher {
+    // Construction sous-clé (Key Scheduling && Réseau de Feistel)
     pub fn new(key: &[u8]) -> Self {
         if key.len() < 16 {
             panic!("Clé trop courte ! Il faut au moins 16 octets.");
@@ -23,6 +24,7 @@ impl RogueCipher {
         RogueCipher { round_keys: rks }
     }
 
+    // Déchiffrement (ARX)
     fn f(r: u64, k1: u64, k2: u64) -> u64 {
         let x = r ^ k1;
         let rot_val = (k2 & 0x3F) as u32; 
@@ -30,16 +32,14 @@ impl RogueCipher {
         y ^ k1
     }
 
-    // --- DÉCHIFFREMENT ---
+    // Déchiffrement (Réseau de Feistel)
     fn decrypt_block(&self, block: &mut [u8]) {
         let mut l = u64::from_le_bytes(block[0..8].try_into().unwrap());
         let mut r = u64::from_le_bytes(block[8..16].try_into().unwrap());
 
-        // On parcourt les rounds en sens inverse (11 down to 0)
         for i in (0..12).rev() {
             let k1 = self.round_keys[i][0];
             let k2 = self.round_keys[i][1];
-            
             let temp_r = r;
             r = l;
             l = temp_r ^ Self::f(r, k1, k2);
@@ -49,18 +49,28 @@ impl RogueCipher {
         block[8..16].copy_from_slice(&r.to_le_bytes());
     }
 
+   // Découpage des blocs (Padding PKCS#7)
     pub fn decrypt_payload(&self, data: &mut Vec<u8>) {
-        if data.len() % 16 != 0 {
-            return; // Ou panic selon ton besoin
-        }
-
         for chunk in data.chunks_exact_mut(16) {
             self.decrypt_block(chunk);
+        }
+
+        if let Some(&last_byte) = data.last() {
+            let padding_len = last_byte as usize;
+            if padding_len > 0 && padding_len <= 16 {
+                let frame = &data[data.len() - padding_len..];
+                if frame.iter().all(|&b| b == last_byte) {
+                    data.truncate(data.len() - padding_len);
+                } else {
+                    panic!("Problème lors du découpage");
+                }
+            }
         }
     }
 }
 
-// --- GÉNÉRATION DE LA CLÉ (STOLEN BYTES) ---
+
+// Génération base (Stolen Bytes && API/Binary fingerprinting)
 pub fn get_stolen_key() -> Vec<u8> {
     let mut key = Vec::new();
 
@@ -93,12 +103,9 @@ pub fn get_stolen_key() -> Vec<u8> {
 
     #[cfg(target_os = "linux")]
     unsafe {
-        // Sous Linux, libc contient la plupart des appels système de base
-        // RTLD_LAZY (1) est souvent suffisant pour l'ouverture
         let libc_name = CString::new("libc.so.6").unwrap();
         let h_libc = libc::dlopen(libc_name.as_ptr(), libc::RTLD_LAZY);
 
-        // Liste des fonctions "intéressantes" pour générer l'entropie
         let funcs = [
             CString::new("mmap").unwrap(),
             CString::new("mprotect").unwrap(),
@@ -110,7 +117,6 @@ pub fn get_stolen_key() -> Vec<u8> {
             for func_name in funcs.iter() {
                 let addr = libc::dlsym(h_libc, func_name.as_ptr());
                 if !addr.is_null() {
-                    // On lit les 4 premiers octets (l'entête de la fonction)
                     for offset in 0..4 {
                         let byte = ptr::read_volatile((addr as *const u8).offset(offset));
                         key.push(byte);
@@ -121,7 +127,6 @@ pub fn get_stolen_key() -> Vec<u8> {
         }
     }
 
-    // On s'assure d'avoir au moins 16 octets
     if key.len() < 16 {
         key.extend(vec![0x00; 16 - key.len()]);
     }
