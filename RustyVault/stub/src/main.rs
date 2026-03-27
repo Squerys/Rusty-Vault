@@ -8,6 +8,7 @@ mod config;
 mod payload;
 mod loader;
 mod utils;
+mod cypher;
 
 fn main() {
     // Enti-Debug
