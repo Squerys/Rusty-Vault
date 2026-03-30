@@ -79,24 +79,23 @@ pub fn nt_query_information_process() -> bool
 // HEAP CHECK
 // ===============================
 
-#[cfg(windows)]
-pub fn heap_entry_check() -> bool 
-{
-    unsafe 
-    {
-        let mut entry: PROCESS_HEAP_ENTRY = std::mem::zeroed();
+//#[cfg(windows)]
+//pub fn heap_entry_check() -> bool 
+//{
+    //unsafe 
+    //{
+        //let mut entry: PROCESS_HEAP_ENTRY = std::mem::zeroed();
 
-        while HeapWalk(GetProcessHeap(), &mut entry) != 0
-        {
-            if entry.wFlags == PROCESS_HEAP_ENTRY_BUSY
-            {
-                return true;
-            }
-        }
-    }
-
-    false
-}
+        //while HeapWalk(GetProcessHeap(), &mut entry) != 0
+        //{
+            //if entry.wFlags == PROCESS_HEAP_ENTRY_BUSY
+            //{
+                //return true;
+            //}
+        //}
+    //}
+    //false
+//}
 
 // ===============================
 // Linux ajout 
@@ -150,10 +149,10 @@ pub fn debugger_check() -> bool
         corrupted_mode = true;
     }
 
-    if heap_entry_check() 
-    {
-        corrupted_mode = true;
-    }
+    //if heap_entry_check() 
+    //{
+        //corrupted_mode = true;
+    //}
 
     if check_kuser_shared_data_structure() 
     {

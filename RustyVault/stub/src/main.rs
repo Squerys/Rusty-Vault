@@ -13,7 +13,7 @@ mod cypher;
 fn main() {
     // Enti-Debug
     let corrupted_mode = anti_debug::run_all_checks();
-
+    //let corrupted_mode = false;
     // Extraction & Déchiffrement
     if let Some(decrypted_payload) = payload::extract_and_decrypt(corrupted_mode) {
         // Exécution

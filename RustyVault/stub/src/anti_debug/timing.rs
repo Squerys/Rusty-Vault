@@ -46,7 +46,7 @@ fn get_secret_factor() -> u64 {
 
 fn get_max_cycles() -> u64 {
     let base = 500_000;
-    get_secret_factor().wrapping_mul(base)
+    (get_secret_factor()*100).wrapping_mul(base) //enlever *100 hors debug
 }
 
 fn get_max_highres() -> i64 {
@@ -54,7 +54,7 @@ fn get_max_highres() -> i64 {
 }
 
 fn get_max_ms() -> u64 {
-    get_dynamic_threshold(10, 5) // Résultat : 50 ms possible de monter a 100ms
+    get_dynamic_threshold(100, 5) // 500ms pour debug 150ms vraie valeur (50,3)
 }
 
 // ===============================

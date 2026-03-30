@@ -11,15 +11,17 @@ use windows_sys::Win32::System::Diagnostics::Debug::{
     RemoveVectoredExceptionHandler,
     EXCEPTION_POINTERS
 };
+use winapi::vc::excpt::EXCEPTION_CONTINUE_SEARCH;
+// Ajoute cette ligne en haut de ton fichier exceptions.rs
+static mut EXCEPTION_HIT: bool = false;
 
 #[cfg(windows)]
 use windows_sys::Win32::System::Threading::ExitProcess;
 
-<<<<<<< HEAD
 use std::ptr;
 static mut LAST_VEH: *mut std::ffi::c_void = ptr::null_mut();
 const EXCEPTION_CONTINUE_EXECUTION: i32 = -1;
-=======
+
 // ===============================
 // LINUX IMPORTS
 // ===============================
@@ -33,9 +35,6 @@ use libc::{sigaction, siginfo_t, SIGTRAP, SA_SIGINFO};
 #[cfg(target_os = "linux")]
 static mut LINUX_SIGNAL_RECEIVED: bool = false;
 
-#[cfg(windows)]
-static mut LAST_VEH: *mut core::ffi::c_void = core::ptr::null_mut();
->>>>>>> 4bb8f75dcf8cbf593c8d0fa3f9e7b930f98c0561
 
 // ===============================
 // EXCEPTION FILTER
@@ -64,22 +63,20 @@ unsafe extern "system" fn unhandled_exception_filter(exception_info: *const wind
     EXCEPTION_CONTINUE_EXECUTION
 }
 
-#[cfg(windows)]
-fn unhandled_exception_check() -> bool
-{
-    let mut debugged = true;
+//#[cfg(windows)]
+//fn unhandled_exception_check() -> bool
+//{
+    //let mut debugged = true;
+    //unsafe
+    //{
+        //SetUnhandledExceptionFilter(Some(unhandled_exception_filter));
+		//core::arch::asm!("int3");
+    //}
+	
+    //debugged = false;
 
-    unsafe
-    {
-        SetUnhandledExceptionFilter(Some(unhandled_exception_filter));
-
-        core::arch::asm!("int3");
-    }
-
-    debugged = false;
-
-    debugged
-}
+    //debugged
+//}
 
 
 // ===============================
@@ -177,17 +174,17 @@ pub fn exception_check() -> bool
         corrupted_mode = true;
     }
 
-    #[cfg(windows)]
-    if !unhandled_exception_check()
-    {
-        corrupted_mode = true;
-    }
+    //#[cfg(windows)]
+    //if !unhandled_exception_check()
+    //{
+        //corrupted_mode = true;
+    //}
 
-    #[cfg(windows)]
-    if veh_chain_check()
-    {
-        corrupted_mode = true;
-    }
+    //#[cfg(windows)]
+    //if veh_chain_check()
+    //{
+        //corrupted_mode = true;
+    //}
 
     corrupted_mode
 }
