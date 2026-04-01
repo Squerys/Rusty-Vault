@@ -1,7 +1,9 @@
+cargo-features = ["edition2024"]
+
 [package]
 name = "stub"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 obfstr = "0.4"
@@ -30,3 +32,5 @@ features = [
 ]
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2"
+
+
