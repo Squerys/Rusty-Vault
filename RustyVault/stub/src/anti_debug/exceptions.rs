@@ -11,6 +11,7 @@ use windows_sys::Win32::System::Diagnostics::Debug::{
     RemoveVectoredExceptionHandler,
     EXCEPTION_POINTERS
 };
+#[cfg(target_os = "windows")]
 use winapi::vc::excpt::EXCEPTION_CONTINUE_SEARCH;
 // Ajoute cette ligne en haut de ton fichier exceptions.rs
 static mut EXCEPTION_HIT: bool = false;
