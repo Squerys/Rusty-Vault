@@ -139,11 +139,10 @@ unsafe extern "system" fn exception_handler1(info: *mut EXCEPTION_POINTERS) -> i
 unsafe extern "C" fn linux_sig_handler(_sig: i32, _info: *mut siginfo_t, ucontext: *mut libc::c_void) {
     let context = ucontext as *mut libc::ucontext_t;
     
-    #[cfg(target_arch = "x86_64")]
-    {
-        (*context).uc_mcontext.gregs[libc::REG_RIP as usize] += 1;
-    }
-    
+    //#[cfg(target_arch = "x86_64")]
+    //{
+        //(*context).uc_mcontext.gregs[libc::REG_RIP as usize] += 1; ça corrompt le rip donc évite
+    //}
     LINUX_SIGNAL_RECEIVED = true;
 }
 
