@@ -23,7 +23,7 @@ fn main() {
     let (target_triple, executable_name, ext, build_command) = match target_type {
         TargetType::Windows => {
             println!("   -> Détecté : Exécutable Windows (PE)");
-            ("x86_64-pc-windows-msvc", "stub.exe", "exe", "build")
+            ("x86_64-pc-windows-gnu", "stub.exe", "exe", "build")
         },
         TargetType::Linux => {
             println!("   -> Détecté : Exécutable Linux (ELF)");
