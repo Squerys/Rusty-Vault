@@ -1,4 +1,3 @@
-
 // ===============================
 // WINDOWS IMPORTS
 // ===============================
@@ -13,8 +12,8 @@ use windows_sys::Win32::System::Diagnostics::Debug::{
 };
 #[cfg(target_os = "windows")]
 use winapi::vc::excpt::EXCEPTION_CONTINUE_SEARCH;
-// Ajoute cette ligne en haut de ton fichier exceptions.rs
-static mut EXCEPTION_HIT: bool = false;
+use std::sync::atomic::{AtomicBool, Ordering};
+static EXCEPTION_HIT: AtomicBool = AtomicBool::new(false);
 
 #[cfg(windows)]
 use windows_sys::Win32::System::Threading::ExitProcess;
@@ -71,9 +70,9 @@ unsafe extern "system" fn unhandled_exception_filter(exception_info: *const wind
     //unsafe
     //{
         //SetUnhandledExceptionFilter(Some(unhandled_exception_filter));
-		//core::arch::asm!("int3");
+        //core::arch::asm!("int3");
     //}
-	
+    
     //debugged = false;
 
     //debugged
@@ -86,7 +85,7 @@ unsafe extern "system" fn unhandled_exception_filter(exception_info: *const wind
 
 #[cfg(windows)]
 unsafe extern "system" fn check_handler(info: *mut EXCEPTION_POINTERS) -> i32 {
-    EXCEPTION_HIT = true;
+    EXCEPTION_HIT.store(true, Ordering::SeqCst);
     let ctx = (*info).ContextRecord;
     //jai mis ça pour detecter des les hardwarebreakpoint
     if (*ctx).Dr0 != 0 || (*ctx).Dr1 != 0 || (*ctx).Dr2 != 0 || (*ctx).Dr3 != 0 {
@@ -100,14 +99,14 @@ unsafe extern "system" fn check_handler(info: *mut EXCEPTION_POINTERS) -> i32 {
 #[cfg(windows)]
 fn raise_exception_check() -> bool {
     unsafe {
-        EXCEPTION_HIT = false;
+        EXCEPTION_HIT.store(false, Ordering::SeqCst);
         let handle = AddVectoredExceptionHandler(1, Some(check_handler));
         
         if !handle.is_null() {
             core::arch::asm!("int3"); 
             RemoveVectoredExceptionHandler(handle);
         }
-        !EXCEPTION_HIT 
+        !EXCEPTION_HIT.load(Ordering::SeqCst) 
     }
 }
 
@@ -116,7 +115,7 @@ fn raise_exception_check() -> bool {
 // ===============================
 #[cfg(windows)]
 unsafe extern "system" fn exception_handler2(info: *mut EXCEPTION_POINTERS) -> i32 {
-    EXCEPTION_HIT = true; 
+    EXCEPTION_HIT.store(true, Ordering::SeqCst); 
     let ctx = (*info).ContextRecord;
     (*ctx).Rip += 1; 
     EXCEPTION_CONTINUE_EXECUTION
@@ -187,11 +186,4 @@ pub fn exception_check() -> bool
         //corrupted_mode = true;
     //}
 
-    corrupted_mode
-}
-
-
-pub fn check() -> bool
-{
-    exception_check()
-}
+    corrupte

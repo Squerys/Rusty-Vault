@@ -12,9 +12,9 @@ pub mod misc;
 
 pub fn run_all_checks() -> bool 
 {
-	if timing::check() { return true; }
-    if memory::check() { return true; }
-    if exceptions::check() { return true; }
+    if timing::check() { return true; }
+    //if memory::check(&[]) { return true; }
+    //if exceptions::check() { return true; }
     if handles::check() { return true; }
     if assembly::check() { return true; }
     if interactive::check() { return true; }
