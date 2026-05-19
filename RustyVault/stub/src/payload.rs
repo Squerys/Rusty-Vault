@@ -5,6 +5,9 @@ use crate::config::{MAGIC_DELIMITER, PARTIAL_KEY};
 use crate::cypher;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[cfg(windows)]
+pub static mut DECRYPTED_CACHE: Option<Vec<u8>> = None;
+
 pub fn extract_and_decrypt(corrupted_mode: bool) -> Option<Vec<u8>> {
     let current_exe = env::current_exe().ok()?;
     let mut file = File::open(current_exe).ok()?;

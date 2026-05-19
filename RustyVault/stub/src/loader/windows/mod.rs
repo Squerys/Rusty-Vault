@@ -1,5 +1,6 @@
 pub mod pe;
 pub mod process;
+pub mod iat;
 
 use std::ptr;
 use winapi::um::memoryapi::{VirtualAllocEx, WriteProcessMemory}; // Ajout de WriteProcessMemory

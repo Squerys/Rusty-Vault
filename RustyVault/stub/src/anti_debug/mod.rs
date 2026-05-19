@@ -16,7 +16,7 @@ pub fn run_all_checks() -> bool
     //if memory::check(&[]) { return true; }
     //if exceptions::check() { return true; }
     if handles::check() { return true; }
-    if assembly::check() { return true; }
+    //if assembly::check() { return true; }
     if interactive::check() { return true; }
     if misc::check() { return true; }
     if debugger::check() { return true; }

@@ -12,6 +12,7 @@ use windows_sys::Win32::System::Diagnostics::Debug::{
 };
 #[cfg(target_os = "windows")]
 use winapi::vc::excpt::EXCEPTION_CONTINUE_SEARCH;
+// Ajoute
 use std::sync::atomic::{AtomicBool, Ordering};
 static EXCEPTION_HIT: AtomicBool = AtomicBool::new(false);
 
@@ -186,4 +187,6 @@ pub fn exception_check() -> bool
         //corrupted_mode = true;
     //}
 
-    corrupte
+    corrupted_mode
+}
+

