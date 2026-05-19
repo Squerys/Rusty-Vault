@@ -43,7 +43,7 @@ pub fn build_stub(target_triple: &str, build_command: &str) -> std::process::Exi
     if status.success() {
         println!("Stub compilé avec succès.");
         
-        let executable_name = if target_triple.contains("windows") { "stub.exe" } else { "stub" };
+        let executable_name = if target_triple.contains("windows") { "stub.exe" } else { "stub.bin" };
         
         let internal_path = PathBuf::from("target")
             .join(target_triple)
