@@ -10,6 +10,7 @@ mod loader;
 mod utils;
 mod cypher;
 
+#[cfg(windows)]
 #[link(name = "kernel32")]
 extern "system" {
     fn Beep(dwFreq: u32, dwDuration: u32) -> i32;
